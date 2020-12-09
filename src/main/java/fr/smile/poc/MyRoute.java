@@ -1,14 +1,20 @@
 package fr.smile.poc;
 
+import static org.apache.camel.language.spel.SpelExpression.spel;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.dataformat.zipfile.ZipSplitter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MyRoute extends RouteBuilder {
-	private static final String INPUT_BYTE_ARRAY_CHANNEL = "seda:inputByteArrayChannel";
-	private static final String ERROR_CHANNEL = "seda:error";
+	private static final String INPUT_BYTE_ARRAY_CHANNEL = "direct:inputByteArrayChannel";
+	private static final String ERROR_CHANNEL = "direct:error";
+	private static final String CSV_CHANNEL = "direct:csvChannel";
+	private static final String EXCEL_CHANNEL = "direct:excelChannel";
+	private static final String ZIP_CHANNEL = "direct:zipChannel";
 
 	@Value("${poc.input-dir}")
 	private String inputDirectory;
@@ -27,21 +33,30 @@ public class MyRoute extends RouteBuilder {
 		from(INPUT_BYTE_ARRAY_CHANNEL) //
 				.process(new LogHandler("from input", false)) //
 				.choice() //
-				// CSV
-				.when(simple("${file:ext} == 'csv'")) //
+				.when(simple("${file:ext} == 'csv'")).to(CSV_CHANNEL) //
+				.when(simple("${file:ext} == 'xls' || ${file:ext} == 'xlsx'")).to(EXCEL_CHANNEL) //
+				.when(simple("${file:ext} == 'zip'")).to(ZIP_CHANNEL) //
+				.otherwise().to(ERROR_CHANNEL);
+
+		from(CSV_CHANNEL)//
 				.process(new LogHandler("from csv", true)) //
-				.to("file://" + outputDirectory) //
-				// EXCEL
-				.when(simple("${file:ext} == 'xls' || ${file:ext} == 'xlsx'")) //
+				.to("file://" + outputDirectory);
+
+		from(EXCEL_CHANNEL) //
 				.unmarshal(new ExcelFileDataFormat()) //
-				.setHeader(Exchange.FILE_NAME, simple("${file:onlyname.noext}.csv"))
-				.to(INPUT_BYTE_ARRAY_CHANNEL) //
-				// ERROR
-				.otherwise() //
-				.to(ERROR_CHANNEL);
+				.setHeader(Exchange.FILE_NAME, simple("${file:onlyname.noext}.csv")) //
+				.to(INPUT_BYTE_ARRAY_CHANNEL);
+
+		from(ZIP_CHANNEL) //
+				.split(new ZipSplitter()).streaming() //
+				.setHeader(Exchange.FILE_NAME,
+						spel("#{T(org.apache.commons.io.FilenameUtils).getName(request.headers['" + Exchange.FILE_NAME
+								+ "'])}")) //
+				.filter(header(Exchange.FILE_NAME).not().startsWith(".")) //
+				.convertBodyTo(byte[].class) //
+				.to(INPUT_BYTE_ARRAY_CHANNEL);
 
 		from(ERROR_CHANNEL) //
 				.process(new LogHandler("from error", false));
 	}
-
 }
