@@ -1,5 +1,6 @@
 package fr.smile.poc;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,8 @@ public class MyRoute extends RouteBuilder {
 				.to("file://" + outputDirectory) //
 				// EXCEL
 				.when(simple("${file:ext} == 'xls' || ${file:ext} == 'xlsx'")) //
-				.process(new ExcelToCsvTransformer()) //
+				.unmarshal(new ExcelFileDataFormat()) //
+				.setHeader(Exchange.FILE_NAME, simple("${file:onlyname.noext}.csv"))
 				.to(INPUT_BYTE_ARRAY_CHANNEL) //
 				// ERROR
 				.otherwise() //
