@@ -32,5 +32,9 @@ public class LogHandler implements Processor {
 			byte[] payload = (byte[]) in.getBody();
 			System.out.println("---> payload " + new String(payload, StandardCharsets.UTF_8));
 		}
+		Throwable error = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, Throwable.class);
+		if (error != null) {
+			error.printStackTrace();
+		}
 	}
 }

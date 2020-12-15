@@ -17,6 +17,11 @@ There are 2 exits :
 - the dump to target folder
 - the error channel
 
+## Disclaimer
+
+I know that the *LogHandler* should not use `System.out.println` or `error.printStackTrace` ...
+This is just a very raw handler to dump information in console =)
+
 ## Test me
 
 ```sh
