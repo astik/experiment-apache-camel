@@ -17,10 +17,13 @@ Send(inputByteArrayChannel, fileExtensionRouter)
 MsgChannel(csvChannel, "CSV channel")
 MsgChannel(zipChannel, "ZIP channel")
 MsgChannel(excelChannel, "Excel channel")
+MsgChannel(pgpChannel, "PGP channel")
 Send(fileExtensionRouter, csvChannel): "CSV"
 Send(fileExtensionRouter, zipChannel): "ZIP"
 Send(fileExtensionRouter, excelChannel): "XLS"
 Send(fileExtensionRouter, excelChannel): "XLSX"
+Send(fileExtensionRouter, pgpChannel): "GPG"
+Send(fileExtensionRouter, pgpChannel): "PGP"
 Send(fileExtensionRouter, errorChannel): "default"
 
 Filter(logFIlter, "Log CSV content")
@@ -39,5 +42,9 @@ Send(filterFileNameStartingWithDot, inputByteArrayChannel)
 MessageTranslator(excelToCsvTransformer, "Excel to CSV")
 Send(excelChannel, excelToCsvTransformer)
 Send(excelToCsvTransformer, inputByteArrayChannel)
+
+MessageTranslator(decryptTransformer, "Decrypt")
+Send(pgpChannel, decryptTransformer)
+Send(decryptTransformer, inputByteArrayChannel)
 
 @enduml

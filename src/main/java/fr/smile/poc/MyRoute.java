@@ -4,6 +4,7 @@ import static org.apache.camel.language.spel.SpelExpression.spel;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.converter.crypto.PGPDataFormat;
 import org.apache.camel.dataformat.zipfile.ZipSplitter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,12 +16,22 @@ public class MyRoute extends RouteBuilder {
 	private static final String CSV_CHANNEL = "direct:csvChannel";
 	private static final String EXCEL_CHANNEL = "direct:excelChannel";
 	private static final String ZIP_CHANNEL = "direct:zipChannel";
+	private static final String PGP_CHANNEL = "direct:pgpChannel";
 
 	@Value("${poc.input-dir}")
 	private String inputDirectory;
 
 	@Value("${poc.output-dir}")
 	private String outputDirectory;
+
+	@Value("${poc.pgp.private-key-path}")
+	private String pgpPrivateKeyFilePath;
+
+	@Value("${poc.pgp.key-user-id}")
+	private String pgpKeyUserId;
+
+	@Value("${poc.pgp.password}")
+	private String pgpPassword;
 
 	@Override
 	public void configure() throws Exception {
@@ -36,6 +47,7 @@ public class MyRoute extends RouteBuilder {
 				.when(simple("${file:ext} == 'csv'")).to(CSV_CHANNEL) //
 				.when(simple("${file:ext} == 'xls' || ${file:ext} == 'xlsx'")).to(EXCEL_CHANNEL) //
 				.when(simple("${file:ext} == 'zip'")).to(ZIP_CHANNEL) //
+				.when(simple("${file:ext} endsWith 'gpg' || ${file:ext} endsWith 'pgp'")).to(PGP_CHANNEL) //
 				.otherwise().to(ERROR_CHANNEL);
 
 		from(CSV_CHANNEL)//
@@ -56,7 +68,19 @@ public class MyRoute extends RouteBuilder {
 				.convertBodyTo(byte[].class) //
 				.to(INPUT_BYTE_ARRAY_CHANNEL);
 
+		PGPDataFormat pgpDataFormat = new PGPDataFormat();
+		pgpDataFormat.setKeyFileName(pgpPrivateKeyFilePath);
+		pgpDataFormat.setKeyUserid(pgpKeyUserId);
+		pgpDataFormat.setPassword(pgpPassword);
+		from(PGP_CHANNEL)//
+				.unmarshal(pgpDataFormat) //
+				.setHeader(Exchange.FILE_NAME,
+						spel("#{T(org.apache.commons.io.FilenameUtils).getBaseName(request.headers['"
+								+ Exchange.FILE_NAME + "'])}")) //
+				.to(INPUT_BYTE_ARRAY_CHANNEL);
+
 		from(ERROR_CHANNEL) //
-				.process(new LogHandler("from error", false));
+				.process(new LogHandler("from error", false)) //
+				.stop();
 	}
 }
