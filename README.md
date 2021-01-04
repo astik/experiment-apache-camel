@@ -32,7 +32,22 @@ Once started, move a file from `data/source-example` to `data/source`.
 You should see some log about what is going on in the system.
 Also, you should notice some new files into `data/target`.
 
-### PGP
+## Features
+
+- [x] java: works with spring
+- [x] endpoint: read file from file system
+- [x] transformer: file to byte array
+- [x] transformer: Zip archive to file entries
+- [x] transformer: Excel to CSV
+- [x] transformer: PGP decryption
+- [x] handler: basic data dump on System.out
+- [x] error handling: explicit error channel
+- [ ] error handling: forward all exception to default error channel
+- [x] error handling: dead letter queue redirect to error channel
+- [ ] monitoring: expose metrics
+- [ ] maintenance: expose graph structure
+
+## PGP
 
 To test PGP, let's follow [Camel documentation](https://camel.apache.org/components/latest/dataformats/pgp-dataformat.html):
 
