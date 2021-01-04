@@ -71,7 +71,6 @@ private.gpg public.gpg
 Then you'll need to configure PGP in *application.properties*:
 ```
 poc.pgp.private-key-path = file:./data/pgp/private.gpg
-poc.pgp.key-user-id      = foo.bar@acme.org
 poc.pgp.password         = woot
 ```
 

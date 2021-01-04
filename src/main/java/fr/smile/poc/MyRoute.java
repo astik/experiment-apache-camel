@@ -27,9 +27,6 @@ public class MyRoute extends RouteBuilder {
 	@Value("${poc.pgp.private-key-path}")
 	private String pgpPrivateKeyFilePath;
 
-	@Value("${poc.pgp.key-user-id}")
-	private String pgpKeyUserId;
-
 	@Value("${poc.pgp.password}")
 	private String pgpPassword;
 
@@ -70,7 +67,6 @@ public class MyRoute extends RouteBuilder {
 
 		PGPDataFormat pgpDataFormat = new PGPDataFormat();
 		pgpDataFormat.setKeyFileName(pgpPrivateKeyFilePath);
-		pgpDataFormat.setKeyUserid(pgpKeyUserId);
 		pgpDataFormat.setPassword(pgpPassword);
 		from(PGP_CHANNEL)//
 				.unmarshal(pgpDataFormat) //
